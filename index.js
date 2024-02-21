@@ -1,4 +1,5 @@
 const express = require('express')
+const morgan = require('morgan')
 const app = express()
 
 let persons = [
@@ -24,13 +25,27 @@ let persons = [
   }
 ]
   
-app.use(express.json())
+const requestLogger = (request, response, next) => {
+  console.log('Method:', request.method)
+  console.log('Path:  ', request.path)
+  console.log('Body:  ', request.body)
+  console.log('---')
+  next()
+}
 
-// app.post('/api/persons', (request, response) => {
-//   const person = request.body
-//   console.log('This is the log', person)
-//   response.json(person)
-// })
+morgan.token('personInfo', function getPersonInfo (req) {
+  return `{"name":"${req.body.name}","number":"${req.body.number}"}`
+})
+
+app.use(morgan(':method :url :status :response-time ms :personInfo'))
+app.use(express.json())
+app.use(requestLogger)
+// app.use(morgan('tiny'))
+
+
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: 'unknown endpoint' })
+}
 
 const generateId = () => {
   const maxId = persons.length > 0
@@ -40,14 +55,20 @@ const generateId = () => {
 }
 
 app.post('/api/persons', (request, response) => {
-  console.log('Testing that this is being run')
+//   console.log('request.body.name is', request.body.name)
   const body = request.body
 
-  if (!body.name) {
+  if (!body.name || !body.number) {
     console.log('failed name ')
     return response.status(400).json({ 
-      error: 'name missing' 
+      error: 'name or phone number missing' 
     })
+  }
+
+  if (persons.some(person => person.name === body.name)) {
+    return response.status(400).json({ 
+        error: 'name must be unique' 
+      })
   }
 
   const person = {
@@ -90,8 +111,10 @@ app.delete('/api/persons/:id', (request, response) => {
   const id = Number(request.params.id)
   persons = persons.filter(person => person.id !== id)
 
-  response.statusMessage(204).end()
+ response.status(204).end()
 })
+
+app.use(unknownEndpoint)
 
 const PORT = 3001
 app.listen(PORT, () => {

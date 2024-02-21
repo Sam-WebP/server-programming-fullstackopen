@@ -66,6 +66,7 @@ app.get('/api/persons/:id', (request, response) => {
   if (person) {
     response.json(person)
   } else {
+    console.log("Didnt make it")
     response.status(404).end()
   }
 })

@@ -26,11 +26,11 @@ let persons = [
   
 app.use(express.json())
 
-app.post('/api/persons', (request, response) => {
-  const person = request.body
-  console.log(person)
-  response.json(person)
-})
+// app.post('/api/persons', (request, response) => {
+//   const person = request.body
+//   console.log('This is the log', person)
+//   response.json(person)
+// })
 
 const generateId = () => {
   const maxId = persons.length > 0
@@ -40,20 +40,23 @@ const generateId = () => {
 }
 
 app.post('/api/persons', (request, response) => {
+  console.log('Testing that this is being run')
   const body = request.body
 
-  if (!body.content) {
+  if (!body.name) {
+    console.log('failed name ')
     return response.status(400).json({ 
-      error: 'content missing' 
+      error: 'name missing' 
     })
   }
 
   const person = {
-    content: body.content,
-    important: body.important || false,
+    name: body.name,
+    number: body.number,
     id: generateId(),
   }
 
+  console.log('person is ', person)
   persons = persons.concat(person)
 
   response.json(person)
@@ -65,6 +68,7 @@ app.get('/api/persons/:id', (request, response) => {
   
   if (person) {
     response.json(person)
+    console.log("URL is ", `/api/persons/${id}`)
   } else {
     console.log("Didnt make it")
     response.status(404).end()
